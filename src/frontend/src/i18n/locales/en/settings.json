@@ -83,6 +83,14 @@
     "created_by": "Created By",
     "modified_by": "Modified By"
   },
+  "team_fields": {
+    "name": "Team Name",
+    "department": "Department",
+    "center": "Center",
+    "region": "Region",
+    "teamlead": "Team Lead",
+    "status": "Status"
+  },
   "roles": {
     "administrator": "Administrator",
     "manager": "Manager",
@@ -253,6 +261,14 @@
     "view_logs": "View Logs"
   },
   "messages": {
+    "loading_teams": "Loading teams...",
+    "error_loading_teams": "Error loading teams",
+    "no_teams": "No teams found",
+    "create_first_team": "Create your first team to get started",
+    "teams_list": "Teams List",
+    "teams": "teams",
+    "no_teamlead": "No team lead assigned",
+    "showing_results": "Showing {{start}} to {{end}} of {{total}} results",
     "customer_info": "Customer Info",
     "customer_doc": "Customer Documents",
     "settings_saved": "Settings saved successfully",

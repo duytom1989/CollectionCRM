@@ -1,9 +1,9 @@
 import React from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../../components/ui/Tabs';
-import { UserIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
+import { UserIcon, ShieldCheckIcon, UsersIcon } from '@heroicons/react/24/outline';
 import { useTranslation } from '../../../../i18n/hooks/useTranslation';
 
-export type UserManagementTab = 'users' | 'roles';
+export type UserManagementTab = 'users' | 'roles' | 'teams';
 
 interface UserManagementTabsProps {
   activeTab: UserManagementTab;
@@ -46,6 +46,14 @@ const UserManagementTabs: React.FC<UserManagementTabsProps> = ({
         >
           <ShieldCheckIcon className="w-4 h-4" />
           <span>{t('settings:user_management.roles')}</span>
+        </TabsTrigger>
+        <TabsTrigger
+          value="teams"
+          className="flex items-center space-x-2"
+          aria-label={t('settings:messages.manage_teams', { defaultValue: 'Manage teams and team assignments' })}
+        >
+          <UsersIcon className="w-4 h-4" />
+          <span>{t('settings:user_management.teams')}</span>
         </TabsTrigger>
       </TabsList>
       

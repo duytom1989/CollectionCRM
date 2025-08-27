@@ -9,6 +9,42 @@ import {
 } from './types';
 
 export const agentsApi = {
+  // Get all agents with optional filtering
+  getAgents: async (params?: {
+    type?: string;
+    team?: string;
+    isActive?: boolean;
+    page?: number;
+    pageSize?: number;
+  }): Promise<{
+    agents: AgentInfo[];
+    pagination: {
+      page: number;
+      pageSize: number;
+      totalPages: number;
+      totalItems: number;
+    };
+  }> => {
+    const response = await apiClient.get<WorkflowApiResponse<{
+      agents: AgentInfo[];
+      pagination: {
+        page: number;
+        pageSize: number;
+        totalPages: number;
+        totalItems: number;
+      };
+    }>>(
+      '/workflow/agents',
+      { params }
+    );
+    
+    if (!response.data.success) {
+      throw new Error(response.data.message || 'Failed to fetch agents');
+    }
+    
+    return response.data.data;
+  },
+
   // Get agent by user ID
   getAgentByUserId: async (userId: string): Promise<AgentInfo> => {
     const response = await apiClient.get<WorkflowApiResponse<AgentInfo>>(

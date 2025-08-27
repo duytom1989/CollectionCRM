@@ -153,6 +153,9 @@ export const serviceRoutes: Record<string, ProxyConfig> = {
     routes: {
       agents: '/agents',
       agentById: '/agents/:id',
+      teams: '/teams',
+      teamById: '/teams/:id',
+      teamsByTeamlead: '/teams/by-teamlead/:teamleadAgentId',
       cases: '/cases',
       customerCases: '/cases/customer/:cif',
       customerCaseStatus: '/cases/status/:cif',

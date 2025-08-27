@@ -5,6 +5,7 @@ export * from './types';
 export { actionsApi } from './actions.api';
 export { actionConfigApi } from './action-config.api';
 export { agentsApi } from './agents.api';
+export { teamsApi } from './teams.api';
 export { statusApi } from './status.api';
 export { contactsApi } from './contacts.api';
 export { fudAutoConfigApi } from './fud-auto-config.api';
@@ -14,6 +15,7 @@ export { referenceCustomersApi } from './reference-customers.api';
 import { actionsApi } from './actions.api';
 import { actionConfigApi } from './action-config.api';
 import { agentsApi } from './agents.api';
+import { teamsApi } from './teams.api';
 import { statusApi } from './status.api';
 import { contactsApi } from './contacts.api';
 import { fudAutoConfigApi } from './fud-auto-config.api';
@@ -29,6 +31,9 @@ export const workflowApi = {
   
   // Agents API
   ...agentsApi,
+  
+  // Teams API
+  ...teamsApi,
   
   // Status API (both dictionary and history functions)
   ...statusApi,

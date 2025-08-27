@@ -216,6 +216,7 @@ export interface AgentInfo {
   email: string;
   type: string;
   team: string;
+  employeeId?: string;
 }
 
 export interface AssignmentHistoryResponse {
@@ -276,4 +277,62 @@ export interface BatchStatusResponse {
   skippedRows: number;
   errors: string[];
   hasMoreErrors: boolean;
+}
+
+// =============================================
+// TEAM INTERFACES
+// =============================================
+
+export interface TeamInfo {
+  id: string;
+  name: string;
+  description: string | null;
+  teamleadAgentId: string;
+  department: string;
+  center: string;
+  region: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string | null;
+  updatedBy: string | null;
+  teamleadAgent?: {
+    id: string;
+    employeeId: string;
+    name: string;
+    email: string;
+    phone: string | null;
+    type: string;
+    team: string;
+    isActive: boolean;
+  };
+}
+
+export interface TeamsResponse {
+  teams: TeamInfo[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    totalItems: number;
+  };
+}
+
+export interface CreateTeamRequest {
+  name: string;
+  description?: string;
+  teamleadAgentId: string;
+  department: string;
+  center: string;
+  region: string;
+}
+
+export interface UpdateTeamRequest {
+  name?: string;
+  description?: string;
+  teamleadAgentId?: string;
+  department?: string;
+  center?: string;
+  region?: string;
+  isActive?: boolean;
 }

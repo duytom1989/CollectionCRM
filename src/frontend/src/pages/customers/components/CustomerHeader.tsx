@@ -7,6 +7,7 @@ import { Badge } from '../../../components/ui/Badge';
 import { getCustomerInitials, getCustomerDisplayName } from '../../../utils/customer.utils';
 import { useTranslation } from '../../../i18n/hooks/useTranslation';
 import { referenceCustomersApi } from '../../../services/api/workflow/reference-customers.api';
+import { processingApi } from '../../../services/api/campaign/processing.api';
 
 interface CustomerHeaderProps {
   customer: Customer;
@@ -16,6 +17,7 @@ interface CustomerHeaderProps {
 const CustomerHeader: React.FC<CustomerHeaderProps> = ({ customer, onReferenceClick }) => {
   const { t } = useTranslation(['customers', 'common']);
   const [allReferences, setAllReferences] = useState<ReferenceCustomer[]>(customer.referenceCustomers || []);
+  const [campaignAssignments, setCampaignAssignments] = useState<any[]>([]);
   
   // Fetch workflow reference customers and merge with bank references
   useEffect(() => {
@@ -41,6 +43,27 @@ const CustomerHeader: React.FC<CustomerHeaderProps> = ({ customer, onReferenceCl
       fetchWorkflowReferences();
     }
   }, [customer.cif, customer.referenceCustomers]);
+
+  // Fetch campaign assignments for the customer
+  useEffect(() => {
+    const fetchCampaignAssignments = async () => {
+      try {
+        // Get campaign assignments using only CIF (no processingRunId to get latest)
+        const response = await processingApi.searchCustomerAssignments({
+          cif: customer.cif
+        });
+        
+        setCampaignAssignments(response.data);
+      } catch (error) {
+        console.error('Error fetching campaign assignments:', error);
+        setCampaignAssignments([]);
+      }
+    };
+
+    if (customer.cif) {
+      fetchCampaignAssignments();
+    }
+  }, [customer.cif]);
   
   // Handle click on reference customer
   const handleReferenceClick = () => {
@@ -91,6 +114,47 @@ const CustomerHeader: React.FC<CustomerHeaderProps> = ({ customer, onReferenceCl
                 </div>
               </div>
             </div>
+            
+            {/* Campaign Assignments Section */}
+            {campaignAssignments.length > 0 && (
+              <div className="mt-4">
+                <h3 className="text-sm font-semibold mb-2">Campaign History</h3>
+                <div className="bg-neutral-50 rounded p-3 border border-neutral-200">
+                  {(() => {
+                    // Get distinct campaigns by campaign_id and sort by completion date
+                    const distinctCampaigns = campaignAssignments
+                      .filter((assignment, index, self) =>
+                        index === self.findIndex(a => a.campaign_id === assignment.campaign_id)
+                      )
+                      .sort((a, b) => {
+                        const dateA = new Date(a.processing_run_completed_at || 0);
+                        const dateB = new Date(b.processing_run_completed_at || 0);
+                        return dateB.getTime() - dateA.getTime();
+                      })
+                      .slice(0, 3);
+                    
+                    return distinctCampaigns.map((assignment, index) => (
+                      <div key={index} className="mb-2 last:mb-0">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="text-sm font-medium">{assignment.campaign_name || 'N/A'}</div>
+                            <div className="text-xs text-neutral-500">{assignment.campaign_group_name || 'N/A'}</div>
+                            {assignment.processing_run_completed_at && (
+                              <div className="text-xs text-neutral-400 mt-1">
+                                Run on: {new Date(assignment.processing_run_completed_at).toLocaleDateString()}
+                              </div>
+                            )}
+                          </div>
+                          <Badge variant="info" className="text-xs">
+                            Campaign
+                          </Badge>
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </div>
+            )}
           </div>
           
           {/* Right side - Reference Customers Section */}

@@ -3,18 +3,20 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../../../components
 import { Button } from '../../../../components/ui/Button';
 import { Alert } from '../../../../components/ui/Alert';
 import { TabsContent } from '../../../../components/ui/Tabs';
-import { UserIcon, ShieldCheckIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { UserIcon, ShieldCheckIcon, ExclamationTriangleIcon, UsersIcon } from '@heroicons/react/24/outline';
 import UserManagementTabs from './UserManagementTabs';
 import UserList from './UserList';
 import RoleList from './RoleList';
+import TeamList from './TeamList';
 import UserModal from './UserModal';
 import RoleModal from './RoleModal';
+import TeamModal from './TeamModal';
 import UserSessionsModal from './UserSessionsModal';
 import RoleUsersModal from './RoleUsersModal';
 import { UserResponse, RoleResponse } from '../../../../services/api/auth.api';
 import { useTranslation } from '../../../../i18n/hooks/useTranslation';
 
-export type UserManagementTab = 'users' | 'roles';
+export type UserManagementTab = 'users' | 'roles' | 'teams';
 
 interface UserManagementProps {
   className?: string;
@@ -34,6 +36,9 @@ interface UserManagementState {
   userForSessions: UserResponse | null;
   showRoleUsersModal: boolean;
   roleForUsers: RoleResponse | null;
+  showTeamModal: boolean;
+  teamModalMode: 'create' | 'edit';
+  selectedTeam: any; // TODO: Define TeamResponse type
   refreshTrigger: number;
 }
 
@@ -53,6 +58,9 @@ const UserManagement: React.FC<UserManagementProps> = ({ className }) => {
     userForSessions: null,
     showRoleUsersModal: false,
     roleForUsers: null,
+    showTeamModal: false,
+    teamModalMode: 'create',
+    selectedTeam: null,
     refreshTrigger: 0,
   });
 
@@ -193,6 +201,47 @@ const UserManagement: React.FC<UserManagementProps> = ({ className }) => {
     // TODO: Implement role deletion with confirmation
   };
 
+  // Team management handlers
+  const handleAddTeam = () => {
+    setState(prev => ({
+      ...prev,
+      showTeamModal: true,
+      teamModalMode: 'create',
+      selectedTeam: null,
+    }));
+  };
+
+  const handleEditTeam = (team: any) => {
+    setState(prev => ({
+      ...prev,
+      showTeamModal: true,
+      teamModalMode: 'edit',
+      selectedTeam: team,
+    }));
+  };
+
+  const handleCloseTeamModal = () => {
+    setState(prev => ({
+      ...prev,
+      showTeamModal: false,
+      selectedTeam: null,
+    }));
+  };
+
+  const handleTeamModalSuccess = () => {
+    setState(prev => ({
+      ...prev,
+      showTeamModal: false,
+      selectedTeam: null,
+      refreshTrigger: prev.refreshTrigger + 1
+    }));
+  };
+
+  const handleDeleteTeam = (team: any) => {
+    console.log('Delete team:', team);
+    // TODO: Implement team deletion with confirmation
+  };
+
   const renderUsersContent = () => {
     return (
       <div className="space-y-6">
@@ -243,6 +292,31 @@ const UserManagement: React.FC<UserManagementProps> = ({ className }) => {
     );
   };
 
+  const renderTeamsContent = () => {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <UsersIcon className="w-6 h-6 text-primary-600" />
+            <div>
+              <h3 className="text-lg font-semibold text-neutral-900">Team Management</h3>
+              <p className="text-sm text-neutral-600">{t('settings:messages.manage_teams')}</p>
+            </div>
+          </div>
+          <Button variant="primary" size="sm" onClick={handleAddTeam}>
+            Add Team
+          </Button>
+        </div>
+        
+        <TeamList
+          onEditTeam={handleEditTeam}
+          onDeleteTeam={handleDeleteTeam}
+          refreshTrigger={state.refreshTrigger}
+        />
+      </div>
+    );
+  };
+
   return (
     <div className={className}>
       <Card>
@@ -287,6 +361,10 @@ const UserManagement: React.FC<UserManagementProps> = ({ className }) => {
             <TabsContent value="roles">
               {renderRolesContent()}
             </TabsContent>
+            
+            <TabsContent value="teams">
+              {renderTeamsContent()}
+            </TabsContent>
           </UserManagementTabs>
         </CardContent>
       </Card>
@@ -321,6 +399,15 @@ const UserManagement: React.FC<UserManagementProps> = ({ className }) => {
         isOpen={state.showRoleUsersModal}
         onClose={handleCloseRoleUsersModal}
         role={state.roleForUsers}
+      />
+
+      {/* Team Modal */}
+      <TeamModal
+        isOpen={state.showTeamModal}
+        onClose={handleCloseTeamModal}
+        onSuccess={handleTeamModalSuccess}
+        team={state.selectedTeam}
+        mode={state.teamModalMode}
       />
     </div>
   );

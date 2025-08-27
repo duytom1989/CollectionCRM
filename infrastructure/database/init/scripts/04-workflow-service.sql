@@ -179,10 +179,30 @@ CREATE TABLE workflow_service.agents (
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     created_by VARCHAR(50),
-    updated_by VARCHAR(50)
+    updated_by VARCHAR(50),
+    CONSTRAINT fk_agent_team FOREIGN KEY (team) REFERENCES workflow_service.teams(name) ON DELETE RESTRICT
 );
 
 COMMENT ON TABLE workflow_service.agents IS 'Stores information about collection agents and their teams';
+
+-- Teams table
+CREATE TABLE workflow_service.teams (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT,
+    teamlead_agent_id UUID NOT NULL,
+    department VARCHAR(50) NOT NULL,
+    center VARCHAR(50) NOT NULL,
+    region VARCHAR(50) NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    created_by VARCHAR(50),
+    updated_by VARCHAR(50),
+    CONSTRAINT fk_team_teamlead FOREIGN KEY (teamlead_agent_id) REFERENCES workflow_service.agents(id) ON DELETE RESTRICT
+);
+
+COMMENT ON TABLE workflow_service.teams IS 'Stores information about teams with their team leads and organizational structure';
 
 -- =============================================
 -- CUSTOMIZABLE ACTION CONFIGURATION TABLES

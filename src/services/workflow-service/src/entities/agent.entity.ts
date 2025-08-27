@@ -1,5 +1,6 @@
-import { Entity, Column, Index } from 'typeorm';
+import { Entity, Column, Index, ManyToOne, JoinColumn } from 'typeorm';
 import { BaseEntity } from './base.entity';
+import { Team } from './team.entity';
 
 /**
  * Agent entity
@@ -26,6 +27,10 @@ export class Agent extends BaseEntity {
   @Column()
   @Index()
   team: string;
+
+  @ManyToOne(() => Team, { onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'team', referencedColumnName: 'name' })
+  teamDetails: Team;
 
   @Column({ name: 'is_active', default: true })
   @Index()

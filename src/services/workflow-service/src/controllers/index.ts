@@ -1,4 +1,5 @@
 export * from './agent.controller';
+export * from './team.controller';
 export * from './action.controller';
 export * from './fud-auto-config.controller';
 export * from './assignment.controller';

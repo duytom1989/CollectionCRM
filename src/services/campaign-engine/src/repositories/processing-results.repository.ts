@@ -167,7 +167,8 @@ export class ProcessingResultsRepository {
         'cr.campaign_group_id',
         'cr.campaign_group_name',
         'cpr.request_id',
-        'cpr.started_at as processing_run_started_at'
+        'cpr.started_at as processing_run_started_at',
+        'cpr.completed_at as processing_run_completed_at'
       )
       .join('campaign_engine.campaign_results as cr', 'ca.campaign_result_id', 'cr.id')
       .join('campaign_engine.campaign_processing_runs as cpr', 'cr.processing_run_id', 'cpr.id');
@@ -176,9 +177,11 @@ export class ProcessingResultsRepository {
       query = query.where('ca.cif', search.cif);
     }
     
-    
     if (search.processingRunId) {
       query = query.where('cpr.id', search.processingRunId);
+    } else {
+      // If no processingRunId is provided, order by completed_at to get the latest result
+      query = query.orderByRaw('cpr.completed_at DESC NULLS LAST');
     }
     
     const assignments = await query.orderBy('ca.assigned_at', 'desc').limit(100);

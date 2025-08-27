@@ -1,5 +1,6 @@
 export * from './base.entity';
 export * from './agent.entity';
+export * from './team.entity';
 export * from './action-record.entity';
 export * from './action-type.entity';
 export * from './action-subtype.entity';

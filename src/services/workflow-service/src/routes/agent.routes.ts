@@ -14,7 +14,6 @@ const agentController = new AgentController();
 router.get(
   '/',
   requireAuth,
-  validatePagination,
   agentController.getAgents
 );
 

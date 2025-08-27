@@ -245,7 +245,7 @@ export class ProcessingController {
 
       const assignments = await this.resultsRepository.searchCustomerAssignments({
         cif: cif as string,
-        processingRunId: processing_run_id as string
+        processingRunId: processing_run_id as string || undefined
       });
 
       res.json({

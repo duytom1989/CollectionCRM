@@ -25,7 +25,10 @@ export const AgentRepository = AppDataSource.getRepository(Agent).extend({
    */
   async findById(id: string): Promise<Agent | null> {
     try {
-      return await this.findOneBy({ id });
+      return await this.findOne({
+        where: { id },
+        relations: ['teamDetails']
+      });
     } catch (error) {
       throw Errors.wrap(
         error as Error,
@@ -43,7 +46,10 @@ export const AgentRepository = AppDataSource.getRepository(Agent).extend({
    */
   async findByEmployeeId(employeeId: string): Promise<Agent | null> {
     try {
-      return await this.findOneBy({ employeeId });
+      return await this.findOne({
+        where: { employeeId },
+        relations: ['teamDetails']
+      });
     } catch (error) {
       throw Errors.wrap(
         error as Error,
@@ -61,7 +67,10 @@ export const AgentRepository = AppDataSource.getRepository(Agent).extend({
    */
   async findByUserId(userId: string): Promise<Agent | null> {
     try {
-      return await this.findOneBy({ userId });
+      return await this.findOne({
+        where: { userId },
+        relations: ['teamDetails']
+      });
     } catch (error) {
       throw Errors.wrap(
         error as Error,
@@ -79,7 +88,10 @@ export const AgentRepository = AppDataSource.getRepository(Agent).extend({
    */
   async findByName(name: string): Promise<Agent | null> {
     try {
-      return await this.findOneBy({ name });
+      return await this.findOne({
+        where: { name },
+        relations: ['teamDetails']
+      });
     } catch (error) {
       throw Errors.wrap(
         error as Error,
@@ -97,7 +109,8 @@ export const AgentRepository = AppDataSource.getRepository(Agent).extend({
    */
   async searchAgents(criteria: AgentSearchCriteria): Promise<PaginatedResponse<Agent>> {
     try {
-      const queryBuilder = this.createQueryBuilder('agent');
+      const queryBuilder = this.createQueryBuilder('agent')
+        .leftJoinAndSelect('agent.teamDetails', 'teamDetails');
       
       // Apply filters
       if (criteria.type) {
@@ -146,7 +159,20 @@ export const AgentRepository = AppDataSource.getRepository(Agent).extend({
   async createAgent(agent: Partial<Agent>): Promise<Agent> {
     try {
       const newAgent = this.create(agent);
-      return await this.save(newAgent);
+      const savedAgent = await this.save(newAgent);
+      
+      // Return the agent with team details
+      const agentWithDetails = await this.findById(savedAgent.id);
+      if (!agentWithDetails) {
+        throw Errors.create(
+          Errors.Database.RECORD_NOT_FOUND,
+          `Agent with ID ${savedAgent.id} not found after creation`,
+          OperationType.DATABASE,
+          SourceSystemType.WORKFLOW_SERVICE
+        );
+      }
+      
+      return agentWithDetails;
     } catch (error) {
       throw Errors.wrap(
         error as Error,
@@ -165,7 +191,10 @@ export const AgentRepository = AppDataSource.getRepository(Agent).extend({
    */
   async updateAgent(id: string, agentData: Partial<Agent>): Promise<Agent> {
     try {
-      const agent = await this.findById(id);
+      const agent = await this.findOne({
+        where: { id },
+        relations: ['teamDetails']
+      });
       
       if (!agent) {
         throw Errors.create(
@@ -179,7 +208,20 @@ export const AgentRepository = AppDataSource.getRepository(Agent).extend({
       // Update agent properties
       Object.assign(agent, agentData);
       
-      return await this.save(agent);
+      const updatedAgent = await this.save(agent);
+      
+      // Return the agent with team details
+      const agentWithDetails = await this.findById(updatedAgent.id);
+      if (!agentWithDetails) {
+        throw Errors.create(
+          Errors.Database.RECORD_NOT_FOUND,
+          `Agent with ID ${id} not found after update`,
+          OperationType.DATABASE,
+          SourceSystemType.WORKFLOW_SERVICE
+        );
+      }
+      
+      return agentWithDetails;
     } catch (error) {
       throw Errors.wrap(
         error as Error,
@@ -224,7 +266,20 @@ export const AgentRepository = AppDataSource.getRepository(Agent).extend({
       // Link agent to user
       agent.userId = userId;
       
-      return await this.save(agent);
+      const updatedAgent = await this.save(agent);
+      
+      // Return the agent with team details
+      const agentWithDetails = await this.findById(updatedAgent.id);
+      if (!agentWithDetails) {
+        throw Errors.create(
+          Errors.Database.RECORD_NOT_FOUND,
+          `Agent with ID ${agentId} not found after linking to user`,
+          OperationType.DATABASE,
+          SourceSystemType.WORKFLOW_SERVICE
+        );
+      }
+      
+      return agentWithDetails;
     } catch (error) {
       throw Errors.wrap(
         error as Error,

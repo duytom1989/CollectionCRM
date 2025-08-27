@@ -2,6 +2,7 @@
   "buttons": {
     "save": "Save",
     "cancel": "Cancel",
+    "retry": "Retry",
     "delete": "Delete",
     "edit": "Edit",
     "add": "Add",
@@ -49,6 +50,7 @@
     "start": "Start",
     "selectFile": "Select File"
   },
+  "actionstext": "Actions",
   "actions": {
     "edit": "Edit",
     "deactivate": "Deactivate",
