@@ -3,10 +3,12 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../../../components
 import { Button } from '../../../../components/ui/Button';
 import { Badge } from '../../../../components/ui/Badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../../components/ui/Table';
-import { EllipsisVerticalIcon, PencilIcon, TrashIcon, UsersIcon } from '@heroicons/react/24/outline';
+import { EllipsisVerticalIcon, PencilIcon, TrashIcon, UsersIcon, UserPlusIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import { Menu, Transition } from '@headlessui/react';
-import { workflowApi, TeamInfo } from '../../../../services/api/workflow.api';
+import { workflowApi, TeamInfo, agentsApi, teamsApi } from '../../../../services/api/workflow.api';
 import { useTranslation } from '../../../../i18n/hooks/useTranslation';
+import AgentSelectionModal from './AgentSelectionModal';
+import CampaignSelectionModal from './CampaignSelectionModal';
 
 interface TeamListProps {
   onEditTeam: (team: TeamInfo) => void;
@@ -30,6 +32,14 @@ const TeamList: React.FC<TeamListProps> = ({
       totalPages: 1,
       totalItems: 0
     }
+  });
+
+  // Modal state
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    selectedTeam: null as TeamInfo | null,
+    isUpdating: false,
+    modalType: 'agents' as 'agents' | 'campaigns'
   });
 
   useEffect(() => {
@@ -66,6 +76,102 @@ const TeamList: React.FC<TeamListProps> = ({
       ...prev,
       pagination: { ...prev.pagination, page }
     }));
+  };
+
+  // Modal handlers
+  const openAddAgentsModal = (team: TeamInfo) => {
+    setModalState({
+      isOpen: true,
+      selectedTeam: team,
+      isUpdating: false,
+      modalType: 'agents'
+    });
+  };
+
+  const openAssignCampaignsModal = (team: TeamInfo) => {
+    setModalState({
+      isOpen: true,
+      selectedTeam: team,
+      isUpdating: false,
+      modalType: 'campaigns'
+    });
+  };
+
+  const closeModals = () => {
+    setModalState(prev => ({
+      ...prev,
+      isOpen: false,
+      selectedTeam: null
+    }));
+  };
+
+  const handleAddAgentsToTeam = async (agentIds: string[]) => {
+    if (!modalState.selectedTeam) return;
+
+    setModalState(prev => ({ ...prev, isUpdating: true }));
+
+    try {
+      // Update each agent with the new team
+      const updatePromises = agentIds.map(agentId =>
+        agentsApi.updateAgent(agentId, { team: modalState.selectedTeam!.name })
+      );
+
+      await Promise.all(updatePromises);
+
+      // Refresh the teams list to show updated agents
+      await loadTeams();
+
+      // Show success message (you could use a toast notification here)
+      console.log(`Successfully added ${agentIds.length} agents to team ${modalState.selectedTeam.name}`);
+
+      // Close the modal
+      closeModals();
+    } catch (error) {
+      console.error('Failed to add agents to team:', error);
+      setModalState(prev => ({ ...prev, isUpdating: false }));
+      throw error; // Re-throw to let the modal handle the error display
+    }
+  };
+
+  const handleAssignCampaignsToTeam = async (campaignIds: string[]) => {
+    if (!modalState.selectedTeam) return;
+
+    setModalState(prev => ({ ...prev, isUpdating: true }));
+
+    try {
+      // Get currently assigned campaigns
+      const currentCampaigns = await teamsApi.getTeamCampaigns(modalState.selectedTeam.id, true);
+      const currentCampaignIds = currentCampaigns.map(c => c.campaign_id);
+
+      // Map campaigns to add (new ones)
+      const campaignsToAdd = campaignIds.filter(id => !currentCampaignIds.includes(id));
+      
+      // Map campaigns to remove (no longer selected)
+      const campaignsToRemove = currentCampaignIds.filter(id => !campaignIds.includes(id));
+
+      // Add new mappings
+      for (const campaignId of campaignsToAdd) {
+        await teamsApi.mapTeamToCampaign(modalState.selectedTeam!.id, campaignId);
+      }
+
+      // Remove old mappings
+      for (const campaignId of campaignsToRemove) {
+        await teamsApi.removeTeamFromCampaign(modalState.selectedTeam!.id, campaignId);
+      }
+
+      // Refresh the teams list
+      await loadTeams();
+
+      // Show success message
+      console.log(`Successfully updated campaign assignments for team ${modalState.selectedTeam.name}`);
+
+      // Close the modal
+      closeModals();
+    } catch (error) {
+      console.error('Failed to assign campaigns to team:', error);
+      setModalState(prev => ({ ...prev, isUpdating: false }));
+      throw error;
+    }
   };
 
   const getActiveBadgeVariant = (isActive: boolean) => {
@@ -153,7 +259,11 @@ const TeamList: React.FC<TeamListProps> = ({
             </TableHeader>
             <TableBody>
               {state.teams.map((team) => (
-                <TableRow key={team.id}>
+                <TableRow
+                  key={team.id}
+                  className="cursor-pointer hover:bg-neutral-50"
+                  onClick={() => openAddAgentsModal(team)}
+                >
                   <TableCell>
                     <div>
                       <div className="font-medium text-neutral-900">{team.name}</div>
@@ -182,7 +292,10 @@ const TeamList: React.FC<TeamListProps> = ({
                   </TableCell>
                   <TableCell>
                     <Menu as="div" className="relative inline-block text-left">
-                      <Menu.Button className="p-2 rounded-md hover:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500">
+                      <Menu.Button
+                        className="p-2 rounded-md hover:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <EllipsisVerticalIcon className="w-5 h-5 text-neutral-600" />
                       </Menu.Button>
                       
@@ -199,7 +312,10 @@ const TeamList: React.FC<TeamListProps> = ({
                             <Menu.Item>
                               {({ active }) => (
                                 <button
-                                  onClick={() => onEditTeam(team)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onEditTeam(team);
+                                  }}
                                   className={`${
                                     active ? 'bg-neutral-100' : ''
                                   } flex items-center w-full px-4 py-2 text-sm text-neutral-700`}
@@ -212,7 +328,26 @@ const TeamList: React.FC<TeamListProps> = ({
                             <Menu.Item>
                               {({ active }) => (
                                 <button
-                                  onClick={() => onDeleteTeam(team)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openAssignCampaignsModal(team);
+                                  }}
+                                  className={`${
+                                    active ? 'bg-neutral-100' : ''
+                                  } flex items-center w-full px-4 py-2 text-sm text-neutral-700`}
+                                >
+                                  <DocumentTextIcon className="w-4 h-4 mr-3" />
+                                  {t('settings:messages.assign_campaign')}
+                                </button>
+                              )}
+                            </Menu.Item>
+                            <Menu.Item>
+                              {({ active }) => (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDeleteTeam(team);
+                                  }}
                                   className={`${
                                     active ? 'bg-neutral-100' : ''
                                   } flex items-center w-full px-4 py-2 text-sm text-red-600`}
@@ -269,6 +404,31 @@ const TeamList: React.FC<TeamListProps> = ({
               </Button>
             </div>
           </div>
+        )}
+         {/* Agent Selection Modal */}
+        {modalState.selectedTeam && modalState.modalType === 'agents' && (
+          <AgentSelectionModal
+            isOpen={modalState.isOpen}
+            onClose={closeModals}
+            team={{
+              id: modalState.selectedTeam.id,
+              name: modalState.selectedTeam.name
+            }}
+            onAddAgents={handleAddAgentsToTeam}
+          />
+        )}
+
+        {/* Campaign Selection Modal */}
+        {modalState.selectedTeam && modalState.modalType === 'campaigns' && (
+          <CampaignSelectionModal
+            isOpen={modalState.isOpen}
+            onClose={closeModals}
+            team={{
+              id: modalState.selectedTeam.id,
+              name: modalState.selectedTeam.name
+            }}
+            onAssignCampaigns={handleAssignCampaignsToTeam}
+          />
         )}
       </CardContent>
     </Card>

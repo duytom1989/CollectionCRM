@@ -42,6 +42,8 @@ DROP FUNCTION IF EXISTS workflow_service.get_status_usage_stats() CASCADE;
 
 -- Drop tables in dependency order (partitioned tables and their partitions will be dropped automatically)
 DROP TABLE IF EXISTS workflow_service.customer_case_actions CASCADE;
+-- Drop team-campaign mapping table
+DROP TABLE IF EXISTS workflow_service.team_campaign_mappings CASCADE;
 -- Drop status tracking tables
 DROP TABLE IF EXISTS workflow_service.recovery_ability_status CASCADE;
 DROP TABLE IF EXISTS workflow_service.lending_violation_status CASCADE;
@@ -200,13 +202,41 @@ CREATE TABLE workflow_service.teams (
     created_by VARCHAR(50),
     updated_by VARCHAR(50),
     CONSTRAINT fk_team_teamlead FOREIGN KEY (teamlead_agent_id) REFERENCES workflow_service.agents(id) ON DELETE RESTRICT
-);
-
-COMMENT ON TABLE workflow_service.teams IS 'Stores information about teams with their team leads and organizational structure';
-
--- =============================================
--- CUSTOMIZABLE ACTION CONFIGURATION TABLES
--- =============================================
+    );
+    
+    COMMENT ON TABLE workflow_service.teams IS 'Stores information about teams with their team leads and organizational structure';
+    
+    -- Create team_campaign_mappings table for many-to-many relationship between teams and campaigns
+    CREATE TABLE workflow_service.team_campaign_mappings (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        team_id UUID NOT NULL,
+        campaign_id UUID NOT NULL,
+        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        created_by VARCHAR(50) NOT NULL,
+        updated_by VARCHAR(50) NOT NULL,
+        CONSTRAINT fk_team_campaign_team
+            FOREIGN KEY (team_id)
+            REFERENCES workflow_service.teams(id)
+            ON DELETE CASCADE,
+        CONSTRAINT fk_team_campaign_campaign
+            FOREIGN KEY (campaign_id)
+            REFERENCES campaign_engine.campaigns(id)
+            ON DELETE CASCADE,
+        CONSTRAINT uk_team_campaign_mapping UNIQUE (team_id, campaign_id)
+    );
+    
+    COMMENT ON TABLE workflow_service.team_campaign_mappings IS 'Many-to-many mapping between teams and campaigns, ensuring no duplicates';
+    
+    -- Add indexes for performance
+    CREATE INDEX idx_team_campaign_mappings_team_id ON workflow_service.team_campaign_mappings(team_id);
+    CREATE INDEX idx_team_campaign_mappings_campaign_id ON workflow_service.team_campaign_mappings(campaign_id);
+    CREATE INDEX idx_team_campaign_mappings_active ON workflow_service.team_campaign_mappings(is_active);
+    
+    -- =============================================
+    -- CUSTOMIZABLE ACTION CONFIGURATION TABLES
+    -- =============================================
 
 -- Action Types table (customizable by admin)
 CREATE TABLE workflow_service.action_types (

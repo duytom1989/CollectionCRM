@@ -284,4 +284,129 @@ export class TeamController {
       next(error);
     }
   }
+  
+  /**
+   * Map a team to a campaign
+   * @route POST /teams/:teamId/campaigns/:campaignId
+   */
+  async mapTeamToCampaign(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { teamId, campaignId } = req.params;
+      
+      // Validate team exists
+      const team = await TeamRepository.findById(teamId);
+      if (!team) {
+        throw Errors.create(
+          Errors.Database.RECORD_NOT_FOUND,
+          `Team with ID ${teamId} not found`,
+          OperationType.DATABASE,
+          SourceSystemType.WORKFLOW_SERVICE
+        );
+      }
+      
+      // Check if mapping already exists
+      const existingMapping = await TeamRepository.findTeamCampaignMapping(teamId, campaignId);
+      if (existingMapping) {
+        throw Errors.create(
+          Errors.Database.DUPLICATE_RECORD,
+          `Team ${teamId} is already mapped to campaign ${campaignId}`,
+          OperationType.DATABASE,
+          SourceSystemType.WORKFLOW_SERVICE
+        );
+      }
+      
+      // Create mapping
+      const mapping = await TeamRepository.createTeamCampaignMapping({
+        teamId,
+        campaignId,
+        isActive: true,
+        createdBy: req.user?.username || 'system',
+        updatedBy: req.user?.username || 'system'
+      });
+      
+      logger.info({ teamId, campaignId }, 'Team mapped to campaign successfully');
+      
+      return ResponseUtil.success(
+        res,
+        mapping,
+        'Team mapped to campaign successfully',
+        201
+      );
+    } catch (error) {
+      logger.error({ error, path: req.path }, 'Error mapping team to campaign');
+      next(error);
+    }
+  }
+  
+  /**
+   * Remove mapping between a team and a campaign
+   * @route DELETE /teams/:teamId/campaigns/:campaignId
+   */
+  async removeTeamFromCampaign(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { teamId, campaignId } = req.params;
+      
+      // Check if mapping exists
+      const mapping = await TeamRepository.findTeamCampaignMapping(teamId, campaignId);
+      if (!mapping) {
+        throw Errors.create(
+          Errors.Database.RECORD_NOT_FOUND,
+          `Mapping between team ${teamId} and campaign ${campaignId} not found`,
+          OperationType.DATABASE,
+          SourceSystemType.WORKFLOW_SERVICE
+        );
+      }
+      
+      // Remove mapping
+      await TeamRepository.deleteTeamCampaignMapping(teamId, campaignId);
+      
+      logger.info({ teamId, campaignId }, 'Team-campaign mapping removed successfully');
+      
+      return ResponseUtil.success(
+        res,
+        null,
+        'Team-campaign mapping removed successfully'
+      );
+    } catch (error) {
+      logger.error({ error, path: req.path }, 'Error removing team-campaign mapping');
+      next(error);
+    }
+  }
+  
+  /**
+   * Get all campaigns mapped to a team
+   * @route GET /teams/:teamId/campaigns
+   */
+  async getTeamCampaigns(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { teamId } = req.params;
+      const { isActive } = req.query;
+      
+      // Validate team exists
+      const team = await TeamRepository.findById(teamId);
+      if (!team) {
+        throw Errors.create(
+          Errors.Database.RECORD_NOT_FOUND,
+          `Team with ID ${teamId} not found`,
+          OperationType.DATABASE,
+          SourceSystemType.WORKFLOW_SERVICE
+        );
+      }
+      
+      // Get campaigns
+      const campaigns = await TeamRepository.getTeamCampaigns(
+        teamId,
+        isActive === 'true' ? true : isActive === 'false' ? false : undefined
+      );
+      
+      return ResponseUtil.success(
+        res,
+        campaigns,
+        'Team campaigns retrieved successfully'
+      );
+    } catch (error) {
+      logger.error({ error, path: req.path }, 'Error getting team campaigns');
+      next(error);
+    }
+  }
 }

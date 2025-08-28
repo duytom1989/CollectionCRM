@@ -222,5 +222,131 @@ export const TeamRepository = AppDataSource.getRepository(Team).extend({
         { id, operation: 'deleteTeam' }
       );
     }
+  },
+
+  /**
+   * Find a team-campaign mapping
+   * @param teamId Team ID
+   * @param campaignId Campaign ID
+   * @returns The mapping if found, null otherwise
+   */
+  async findTeamCampaignMapping(teamId: string, campaignId: string): Promise<any | null> {
+    try {
+      const result = await this.manager.query(
+        `SELECT * FROM workflow_service.team_campaign_mappings
+         WHERE team_id = $1 AND campaign_id = $2`,
+        [teamId, campaignId]
+      );
+      // Return the first result if found, otherwise return null
+      return result && result.length > 0 ? result[0] : null;
+    } catch (error) {
+      throw Errors.wrap(
+        error as Error,
+        OperationType.DATABASE,
+        SourceSystemType.WORKFLOW_SERVICE,
+        { teamId, campaignId, operation: 'findTeamCampaignMapping' }
+      );
+    }
+  },
+
+  /**
+   * Create a new team-campaign mapping
+   * @param mapping Mapping data
+   * @returns The created mapping
+   */
+  async createTeamCampaignMapping(mapping: {
+    teamId: string;
+    campaignId: string;
+    isActive: boolean;
+    createdBy: string;
+    updatedBy: string;
+  }): Promise<any> {
+    try {
+      const result = await this.manager.query(
+        `INSERT INTO workflow_service.team_campaign_mappings
+         (team_id, campaign_id, is_active, created_by, updated_by)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING *`,
+        [mapping.teamId, mapping.campaignId, mapping.isActive, mapping.createdBy, mapping.updatedBy]
+      );
+      return result[0];
+    } catch (error) {
+      throw Errors.wrap(
+        error as Error,
+        OperationType.DATABASE,
+        SourceSystemType.WORKFLOW_SERVICE,
+        { mapping, operation: 'createTeamCampaignMapping' }
+      );
+    }
+  },
+
+  /**
+   * Delete a team-campaign mapping
+   * @param teamId Team ID
+   * @param campaignId Campaign ID
+   */
+  async deleteTeamCampaignMapping(teamId: string, campaignId: string): Promise<void> {
+    try {
+      await this.manager.query(
+        `DELETE FROM workflow_service.team_campaign_mappings
+         WHERE team_id = $1 AND campaign_id = $2`,
+        [teamId, campaignId]
+      );
+    } catch (error) {
+      throw Errors.wrap(
+        error as Error,
+        OperationType.DATABASE,
+        SourceSystemType.WORKFLOW_SERVICE,
+        { teamId, campaignId, operation: 'deleteTeamCampaignMapping' }
+      );
+    }
+  },
+
+  /**
+   * Get all campaigns mapped to a team
+   * @param teamId Team ID
+   * @param isActive Filter by active status (optional)
+   * @returns Array of campaigns
+   */
+  async getTeamCampaigns(teamId: string, isActive?: boolean): Promise<any[]> {
+    try {
+      let query = `
+        SELECT
+          cm.id as mapping_id,
+          cm.team_id,
+          cm.campaign_id,
+          cm.is_active,
+          cm.created_at,
+          cm.updated_at,
+          cm.created_by,
+          cm.updated_by,
+          cg.id as campaign_group_id,
+          cg.name as campaign_group_name,
+          c.name as campaign_name,
+          c.priority
+        FROM workflow_service.team_campaign_mappings cm
+        JOIN campaign_engine.campaigns c ON cm.campaign_id = c.id
+        JOIN campaign_engine.campaign_groups cg ON c.campaign_group_id = cg.id
+        WHERE cm.team_id = $1
+      `;
+      
+      const params: any[] = [teamId];
+      
+      if (isActive !== undefined) {
+        query += ` AND cm.is_active = $2`;
+        params.push(isActive);
+      }
+      
+      query += ` ORDER BY cg.name, c.priority, c.name`;
+      
+      return await this.manager.query(query, params);
+    } catch (error) {
+      throw Errors.wrap(
+        error as Error,
+        OperationType.DATABASE,
+        SourceSystemType.WORKFLOW_SERVICE,
+        { teamId, isActive, operation: 'getTeamCampaigns' }
+      );
+    }
   }
 });

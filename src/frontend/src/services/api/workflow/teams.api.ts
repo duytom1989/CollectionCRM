@@ -95,5 +95,44 @@ export const teamsApi = {
     }
     
     return response.data.data;
+  },
+
+  // Map a team to a campaign
+  mapTeamToCampaign: async (teamId: string, campaignId: string): Promise<any> => {
+    const response = await apiClient.post<WorkflowApiResponse<any>>(
+      `/workflow/teams/${teamId}/campaigns/${campaignId}`
+    );
+    
+    if (!response.data.success) {
+      throw new Error(response.data.message || 'Failed to map team to campaign');
+    }
+    
+    return response.data.data;
+  },
+
+  // Remove mapping between a team and a campaign
+  removeTeamFromCampaign: async (teamId: string, campaignId: string): Promise<void> => {
+    const response = await apiClient.delete<WorkflowApiResponse<void>>(
+      `/workflow/teams/${teamId}/campaigns/${campaignId}`
+    );
+    
+    if (!response.data.success) {
+      throw new Error(response.data.message || 'Failed to remove team-campaign mapping');
+    }
+  },
+
+  // Get all campaigns mapped to a team
+  getTeamCampaigns: async (teamId: string, isActive?: boolean): Promise<any[]> => {
+    const params = isActive !== undefined ? { isActive } : {};
+    const response = await apiClient.get<WorkflowApiResponse<any[]>>(
+      `/workflow/teams/${teamId}/campaigns`,
+      { params }
+    );
+    
+    if (!response.data.success) {
+      throw new Error(response.data.message || 'Failed to fetch team campaigns');
+    }
+    
+    return response.data.data;
   }
 };

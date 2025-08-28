@@ -76,4 +76,39 @@ router.get(
   teamController.getTeamsByTeamlead
 );
 
+/**
+ * @route POST /teams/:teamId/campaigns/:campaignId
+ * @desc Map a team to a campaign
+ * @access Private - Requires authentication and admin role
+ */
+router.post(
+  '/:teamId/campaigns/:campaignId',
+  requireAuth,
+  requirePermissions(['user_management:user']),
+  teamController.mapTeamToCampaign
+);
+
+/**
+ * @route DELETE /teams/:teamId/campaigns/:campaignId
+ * @desc Remove mapping between a team and a campaign
+ * @access Private - Requires authentication and admin role
+ */
+router.delete(
+  '/:teamId/campaigns/:campaignId',
+  requireAuth,
+  requirePermissions(['user_management:user']),
+  teamController.removeTeamFromCampaign
+);
+
+/**
+ * @route GET /teams/:teamId/campaigns
+ * @desc Get all campaigns mapped to a team
+ * @access Private - Requires authentication
+ */
+router.get(
+  '/:teamId/campaigns',
+  requireAuth,
+  teamController.getTeamCampaigns
+);
+
 export default router;

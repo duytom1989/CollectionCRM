@@ -136,5 +136,26 @@ export const agentsApi = {
     }
     
     return response.data.data;
+  },
+
+  // Update an existing agent
+  updateAgent: async (agentId: string, agentData: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    type?: string;
+    team?: string;
+    isActive?: boolean;
+  }): Promise<AgentInfo> => {
+    const response = await apiClient.put<WorkflowApiResponse<AgentInfo>>(
+      `/workflow/agents/${agentId}`,
+      agentData
+    );
+    
+    if (!response.data.success) {
+      throw new Error(response.data.message || 'Failed to update agent');
+    }
+    
+    return response.data.data;
   }
 };

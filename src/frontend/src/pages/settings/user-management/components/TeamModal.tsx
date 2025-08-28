@@ -308,7 +308,7 @@ const TeamModal: React.FC<TeamModalProps> = ({
             onChange={handleInputChange('name')}
             error={state.errors.name}
             disabled={state.loading}
-            placeholder={t('settings:placeholders.team_name')}
+            placeholder={t('settings:team_fields.name')}
             required
             aria-describedby={state.errors.name ? 'name-error' : undefined}
           />
@@ -322,7 +322,7 @@ const TeamModal: React.FC<TeamModalProps> = ({
             onChange={handleInputChange('description')}
             error={state.errors.description}
             disabled={state.loading}
-            placeholder={t('settings:placeholders.team_description')}
+            placeholder={t('settings:team_fields.description')}
             rows={3}
             aria-describedby={state.errors.description ? 'description-error' : undefined}
           />
@@ -357,7 +357,7 @@ const TeamModal: React.FC<TeamModalProps> = ({
             onChange={handleInputChange('department')}
             error={state.errors.department}
             disabled={state.loading}
-            placeholder={t('settings:placeholders.department')}
+            placeholder={t('settings:team_fields.department')}
             required
             aria-describedby={state.errors.department ? 'department-error' : undefined}
           />
@@ -372,7 +372,7 @@ const TeamModal: React.FC<TeamModalProps> = ({
             onChange={handleInputChange('center')}
             error={state.errors.center}
             disabled={state.loading}
-            placeholder={t('settings:placeholders.center')}
+            placeholder={t('settings:team_fields.center')}
             required
             aria-describedby={state.errors.center ? 'center-error' : undefined}
           />
@@ -387,7 +387,7 @@ const TeamModal: React.FC<TeamModalProps> = ({
             onChange={handleInputChange('region')}
             error={state.errors.region}
             disabled={state.loading}
-            placeholder={t('settings:placeholders.region')}
+            placeholder={t('settings:team_fields.region')}
             required
             aria-describedby={state.errors.region ? 'region-error' : undefined}
           />
